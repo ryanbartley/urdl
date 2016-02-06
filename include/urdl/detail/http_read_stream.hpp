@@ -11,14 +11,14 @@
 #ifndef URDL_DETAIL_HTTP_READ_STREAM_HPP
 #define URDL_DETAIL_HTTP_READ_STREAM_HPP
 
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/streambuf.hpp>
-#include <boost/asio/read.hpp>
-#include <boost/asio/read_until.hpp>
-#include <boost/asio/write.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/detail/bind_handler.hpp>
+#include "asio/buffer.hpp"
+#include "asio/io_service.hpp"
+#include "asio/streambuf.hpp"
+#include "asio/read.hpp"
+#include "asio/read_until.hpp"
+#include "asio/write.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/detail/bind_handler.hpp"
 #include <algorithm>
 #include <ostream>
 #include <iterator>
@@ -39,7 +39,7 @@ template <typename Stream>
 class http_read_stream
 {
 public:
-  explicit http_read_stream(boost::asio::io_service& io_service,
+  explicit http_read_stream(asio::io_service& io_service,
       option_set& options)
     : resolver_(io_service),
       socket_(io_service),
@@ -49,7 +49,7 @@ public:
   }
 
   template <typename Arg>
-  http_read_stream(boost::asio::io_service& io_service,
+  http_read_stream(asio::io_service& io_service,
       option_set& options, Arg& arg)
     : resolver_(io_service),
       socket_(io_service, arg),
@@ -58,12 +58,12 @@ public:
   {
   }
 
-  boost::system::error_code open(const url& u, boost::system::error_code& ec)
+  asio::error_code open(const url& u, asio::error_code& ec)
   {
     // Fail if the socket is already open.
     if (socket_.lowest_layer().is_open())
     {
-      ec = boost::asio::error::already_open;
+      ec = asio::error::already_open;
       return ec;
     }
 
@@ -114,8 +114,8 @@ public:
     request_stream << request_content;
 
     // Send the request.
-    boost::asio::write(socket_, request_buffer_,
-        boost::asio::transfer_all(), ec);
+    asio::write(socket_, request_buffer_,
+        asio::transfer_all(), ec);
     if (ec)
       return ec;
 
@@ -123,7 +123,7 @@ public:
     for (;;)
     {
       // Read the reply status line.
-      boost::asio::read_until(socket_, reply_buffer_, "\r\n", ec);
+      asio::read_until(socket_, reply_buffer_, "\r\n", ec);
       if (ec)
         return ec;
 
@@ -147,7 +147,7 @@ public:
     // Read list of headers and save them. If there's anything left in the reply
     // buffer afterwards, it's the start of the content returned by the HTTP
     // server.
-    std::size_t bytes_transferred = boost::asio::read_until(
+    std::size_t bytes_transferred = asio::read_until(
         socket_, reply_buffer_, "\r\n\r\n", ec);
     headers_.resize(bytes_transferred);
     reply_buffer_.sgetn(&headers_[0], bytes_transferred);
@@ -173,10 +173,10 @@ public:
   class open_coro : coroutine
   {
   public:
-    open_coro(Handler handler, boost::asio::ip::tcp::resolver& resolver,
+    open_coro(Handler handler, asio::ip::tcp::resolver& resolver,
         Stream& socket, const option_set& options,
-        boost::asio::streambuf& request_buffer,
-        boost::asio::streambuf& reply_buffer, const url& u,
+        asio::streambuf& request_buffer,
+        asio::streambuf& reply_buffer, const url& u,
         std::string& headers, std::string& content_type,
         std::size_t& content_length, std::string& location)
       : handler_(handler),
@@ -194,7 +194,7 @@ public:
     {
     }
 
-    void operator()(boost::system::error_code ec,
+	void operator()(asio::error_code ec,
         std::size_t bytes_transferred = 0)
     {
       URDL_CORO_BEGIN;
@@ -202,9 +202,9 @@ public:
       // Fail if the socket is already open.
       if (socket_.lowest_layer().is_open())
       {
-        ec = boost::asio::error::already_open;
+        ec = asio::error::already_open;
         URDL_CORO_YIELD(socket_.get_io_service().post(
-              boost::asio::detail::bind_handler(*this, ec)));
+              asio::detail::bind_handler(*this, ec)));
         handler_(ec);
         return;
       }
@@ -268,8 +268,8 @@ public:
       }
 
       // Send the request.
-      URDL_CORO_YIELD(boost::asio::async_write(socket_,
-            request_buffer_, boost::asio::transfer_all(), *this));
+      URDL_CORO_YIELD(asio::async_write(socket_,
+            request_buffer_, asio::transfer_all(), *this));
       if (ec)
       {
         handler_(ec);
@@ -279,7 +279,7 @@ public:
       for (;;)
       {
         // Read the reply status line.
-        URDL_CORO_YIELD(boost::asio::async_read_until(socket_,
+        URDL_CORO_YIELD(asio::async_read_until(socket_,
               reply_buffer_, "\r\n", *this));
         if (ec)
         {
@@ -310,7 +310,7 @@ public:
       // Read list of headers and save them. If there's anything left in the
       // reply buffer afterwards, it's the start of the content returned by the
       // HTTP server.
-      URDL_CORO_YIELD(boost::asio::async_read_until(socket_,
+      URDL_CORO_YIELD(asio::async_read_until(socket_,
             reply_buffer_, "\r\n\r\n", *this));
       headers_.resize(bytes_transferred);
       reply_buffer_.sgetn(&headers_[0], bytes_transferred);
@@ -341,14 +341,14 @@ public:
     friend void* asio_handler_allocate(std::size_t size,
         open_coro<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_allocate;
+      using asio::asio_handler_allocate;
       return asio_handler_allocate(size, &this_handler->handler_);
     }
 
     friend void asio_handler_deallocate(void* pointer, std::size_t size,
         open_coro<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_deallocate;
+      using asio::asio_handler_deallocate;
       asio_handler_deallocate(pointer, size, &this_handler->handler_);
     }
 
@@ -356,7 +356,7 @@ public:
     friend void asio_handler_invoke(Function& function,
         open_coro<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_invoke;
+      using asio::asio_handler_invoke;
       asio_handler_invoke(function, &this_handler->handler_);
     }
 
@@ -364,17 +364,17 @@ public:
     friend void asio_handler_invoke(const Function& function,
         open_coro<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_invoke;
+      using asio::asio_handler_invoke;
       asio_handler_invoke(function, &this_handler->handler_);
     }
 
   private:
     Handler handler_;
-    boost::asio::ip::tcp::resolver& resolver_;
+    asio::ip::tcp::resolver& resolver_;
     Stream& socket_;
     const option_set& options_;
-    boost::asio::streambuf& request_buffer_;
-    boost::asio::streambuf& reply_buffer_;
+    asio::streambuf& request_buffer_;
+    asio::streambuf& reply_buffer_;
     url url_;
     std::string& headers_;
     int status_code_;
@@ -388,10 +388,10 @@ public:
   {
     open_coro<Handler>(handler, resolver_, socket_, options_, request_buffer_,
         reply_buffer_, u, headers_, content_type_, content_length_, location_)(
-          boost::system::error_code(), 0);
+          asio::error_code(), 0);
   }
 
-  boost::system::error_code close(boost::system::error_code& ec)
+  asio::error_code close(asio::error_code& ec)
   {
     resolver_.cancel();
     if (!socket_.lowest_layer().close(ec))
@@ -433,7 +433,7 @@ public:
 
   template <typename MutableBufferSequence>
   std::size_t read_some(const MutableBufferSequence& buffers,
-      boost::system::error_code& ec)
+      asio::error_code& ec)
   {
     // If we have any data in the reply_buffer_, return that first.
     if (reply_buffer_.size() > 0)
@@ -443,22 +443,22 @@ public:
       typename MutableBufferSequence::const_iterator end = buffers.end();
       for (; iter != end && reply_buffer_.size() > 0; ++iter)
       {
-        boost::asio::mutable_buffer buffer(*iter);
-        size_t length = boost::asio::buffer_size(buffer);
+        asio::mutable_buffer buffer(*iter);
+        size_t length = asio::buffer_size(buffer);
         if (length > 0)
         {
           bytes_transferred += reply_buffer_.sgetn(
-              boost::asio::buffer_cast<char*>(buffer), length);
+              asio::buffer_cast<char*>(buffer), length);
         }
       }
-      ec = boost::system::error_code();
+      ec = asio::error_code();
       return bytes_transferred;
     }
 
     // Otherwise we forward the call to the underlying socket.
     std::size_t bytes_transferred = socket_.read_some(buffers, ec);
-    if (ec == boost::asio::error::shut_down)
-      ec = boost::asio::error::eof;
+    if (ec == asio::error::shut_down)
+      ec = asio::error::eof;
     return bytes_transferred;
   }
 
@@ -471,24 +471,24 @@ public:
     {
     }
 
-    void operator()(boost::system::error_code ec, std::size_t bytes_transferred)
+    void operator()(asio::error_code ec, std::size_t bytes_transferred)
     {
-      if (ec == boost::asio::error::shut_down)
-        ec = boost::asio::error::eof;
+      if (ec == asio::error::shut_down)
+        ec = asio::error::eof;
       handler_(ec, bytes_transferred);
     }
 
     friend void* asio_handler_allocate(std::size_t size,
         read_handler<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_allocate;
+      using asio::asio_handler_allocate;
       return asio_handler_allocate(size, &this_handler->handler_);
     }
 
     friend void asio_handler_deallocate(void* pointer, std::size_t size,
         read_handler<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_deallocate;
+      using asio::asio_handler_deallocate;
       asio_handler_deallocate(pointer, size, &this_handler->handler_);
     }
 
@@ -496,7 +496,7 @@ public:
     friend void asio_handler_invoke(Function& function,
         read_handler<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_invoke;
+      using asio::asio_handler_invoke;
       asio_handler_invoke(function, &this_handler->handler_);
     }
 
@@ -504,7 +504,7 @@ public:
     friend void asio_handler_invoke(const Function& function,
         read_handler<Handler>* this_handler)
     {
-      using boost::asio::asio_handler_invoke;
+      using asio::asio_handler_invoke;
       asio_handler_invoke(function, &this_handler->handler_);
     }
 
@@ -518,9 +518,9 @@ public:
     // If we have any data in the reply_buffer_, return that first.
     if (reply_buffer_.size() > 0)
     {
-      boost::system::error_code ec;
+      asio::error_code ec;
       std::size_t bytes_transferred = read_some(buffers, ec);
-      socket_.get_io_service().post(boost::asio::detail::bind_handler(
+      socket_.get_io_service().post(asio::detail::bind_handler(
             handler, ec, bytes_transferred));
       return;
     }
@@ -530,11 +530,11 @@ public:
   }
 
 private:
-  boost::asio::ip::tcp::resolver resolver_;
+  asio::ip::tcp::resolver resolver_;
   Stream socket_;
   option_set& options_;
-  boost::asio::streambuf request_buffer_;
-  boost::asio::streambuf reply_buffer_;
+  asio::streambuf request_buffer_;
+  asio::streambuf reply_buffer_;
   std::string headers_;
   std::string content_type_;
   std::size_t content_length_;

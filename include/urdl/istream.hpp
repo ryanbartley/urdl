@@ -13,7 +13,7 @@
 
 #include <istream>
 #include <boost/utility/base_from_member.hpp>
-#include <boost/system/error_code.hpp>
+#include "asio/error_code.hpp"
 #include "urdl/istreambuf.hpp"
 
 #include "urdl/detail/abi_prefix.hpp"
@@ -271,7 +271,7 @@ public:
    * }
    * @endcode
    */
-  const boost::system::error_code& error() const
+  const asio::error_code& error() const
   {
     return rdbuf()->puberror();
   }

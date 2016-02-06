@@ -144,8 +144,6 @@ private:
 
 #include "urdl/detail/abi_suffix.hpp"
 
-#if defined(URDL_HEADER_ONLY)
-# include "urdl/impl/option_set.ipp"
-#endif
+#include "urdl/impl/option_set.ipp"
 
 #endif // URDL_OPTION_SET_HPP

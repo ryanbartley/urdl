@@ -13,13 +13,13 @@
 
 #include <cstring>
 #include <cctype>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/detail/bind_handler.hpp>
+#include "asio/ip/tcp.hpp"
+#include "asio/ip/address.hpp"
+#include "asio/detail/bind_handler.hpp"
 #include "urdl/detail/coroutine.hpp"
 
 #if !defined(URDL_DISABLE_SSL)
-# include <boost/asio/ssl.hpp>
+# include "asio/ssl.hpp"
 # include <openssl/x509v3.h>
 #endif // !defined(URDL_DISABLE_SSL)
 
@@ -28,20 +28,20 @@
 namespace urdl {
 namespace detail {
 
-inline boost::system::error_code handshake(
-    boost::asio::ip::tcp::socket& /*socket*/,
-    const std::string& /*host*/, boost::system::error_code& ec)
+inline asio::error_code handshake(
+    asio::ip::tcp::socket& /*socket*/,
+    const std::string& /*host*/, asio::error_code& ec)
 {
-  ec = boost::system::error_code();
+  ec = asio::error_code();
   return ec;
 }
 
 template <typename Handler>
-void async_handshake(boost::asio::ip::tcp::socket& socket,
+void async_handshake(asio::ip::tcp::socket& socket,
     const std::string& /*host*/, Handler handler)
 {
-  boost::system::error_code ec;
-  socket.get_io_service().post(boost::asio::detail::bind_handler(handler, ec));
+  asio::error_code ec;
+  socket.get_io_service().post(asio::detail::bind_handler(handler, ec));
 }
 
 #if !defined(URDL_DISABLE_SSL)
@@ -79,9 +79,9 @@ inline bool certificate_matches_host(X509* cert, const std::string& host)
 {
   // Try converting host name to an address. If it is an address then we need
   // to look for an IP address in the certificate rather than a host name.
-  boost::system::error_code ec;
-  boost::asio::ip::address address
-    = boost::asio::ip::address::from_string(host, ec);
+  asio::error_code ec;
+  asio::ip::address address
+    = asio::ip::address::from_string(host, ec);
   bool is_address = !ec;
 
   // Go through the alternate names in the certificate looking for matching DNS
@@ -113,7 +113,7 @@ inline bool certificate_matches_host(X509* cert, const std::string& host)
       {
         if (address.is_v4() && ip_address->length == 4)
         {
-          boost::asio::ip::address_v4::bytes_type address_bytes
+          asio::ip::address_v4::bytes_type address_bytes
             = address.to_v4().to_bytes();
           if (std::memcmp(address_bytes.data(), ip_address->data, 4) == 0)
           {
@@ -123,7 +123,7 @@ inline bool certificate_matches_host(X509* cert, const std::string& host)
         }
         else if (address.is_v6() && ip_address->length == 16)
         {
-          boost::asio::ip::address_v6::bytes_type address_bytes
+          asio::ip::address_v6::bytes_type address_bytes
             = address.to_v6().to_bytes();
           if (std::memcmp(address_bytes.data(), ip_address->data, 16) == 0)
           {
@@ -157,12 +157,12 @@ inline bool certificate_matches_host(X509* cert, const std::string& host)
   return false;
 }
 
-inline boost::system::error_code handshake(
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket,
-    const std::string& host, boost::system::error_code& ec)
+inline asio::error_code handshake(
+    asio::ssl::stream<asio::ip::tcp::socket>& socket,
+    const std::string& host, asio::error_code& ec)
 {
   // Perform SSL handshake.
-  socket.handshake(boost::asio::ssl::stream_base::client, ec);
+  socket.handshake(asio::ssl::stream_base::client, ec);
   if (ec)
     return ec;
 
@@ -172,16 +172,16 @@ inline boost::system::error_code handshake(
     if (SSL_get_verify_result(socket.impl()->ssl) == X509_V_OK)
     {
       if (certificate_matches_host(cert, host))
-        ec = boost::system::error_code();
+        ec = asio::error_code();
       else
-        ec = make_error_code(boost::system::errc::permission_denied);
+        ec = make_error_code(std::errc::permission_denied);
     }
     else
-      ec = make_error_code(boost::system::errc::permission_denied);
+      ec = make_error_code(std::errc::permission_denied);
     X509_free(cert);
   }
   else
-    ec = make_error_code(boost::system::errc::permission_denied);
+    ec = make_error_code(std::errc::permission_denied);
 
   return ec;
 }
@@ -191,7 +191,7 @@ class handshake_coro : coroutine
 {
 public:
   handshake_coro(Handler handler,
-      boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket,
+      asio::ssl::stream<asio::ip::tcp::socket>& socket,
       const std::string& host)
     : handler_(handler),
       socket_(socket),
@@ -199,13 +199,13 @@ public:
   {
   }
 
-  void operator()(boost::system::error_code ec)
+  void operator()(asio::error_code ec)
   {
     URDL_CORO_BEGIN;
 
     // Perform SSL handshake.
     URDL_CORO_YIELD(socket_.async_handshake(
-          boost::asio::ssl::stream_base::client, *this));
+          asio::ssl::stream_base::client, *this));
     if (ec)
     {
       handler_(ec);
@@ -218,16 +218,16 @@ public:
       if (SSL_get_verify_result(socket_.impl()->ssl) == X509_V_OK)
       {
         if (certificate_matches_host(cert, host_))
-          ec = boost::system::error_code();
+          ec = asio::error_code();
         else
-          ec = make_error_code(boost::system::errc::permission_denied);
+          ec = make_error_code(std::errc::permission_denied);
       }
       else
-        ec = make_error_code(boost::system::errc::permission_denied);
+        ec = make_error_code(std::errc::permission_denied);
       X509_free(cert);
     }
     else
-      ec = make_error_code(boost::system::errc::permission_denied);
+      ec = make_error_code(std::errc::permission_denied);
 
     handler_(ec);
 
@@ -237,14 +237,14 @@ public:
   friend void* asio_handler_allocate(std::size_t size,
       handshake_coro<Handler>* this_handler)
   {
-    using boost::asio::asio_handler_allocate;
+    using asio::asio_handler_allocate;
     return asio_handler_allocate(size, &this_handler->handler_);
   }
 
   friend void asio_handler_deallocate(void* pointer, std::size_t size,
       handshake_coro<Handler>* this_handler)
   {
-    using boost::asio::asio_handler_deallocate;
+    using asio::asio_handler_deallocate;
     asio_handler_deallocate(pointer, size, &this_handler->handler_);
   }
 
@@ -252,7 +252,7 @@ public:
   friend void asio_handler_invoke(Function& function,
       handshake_coro<Handler>* this_handler)
   {
-    using boost::asio::asio_handler_invoke;
+    using asio::asio_handler_invoke;
     asio_handler_invoke(function, &this_handler->handler_);
   }
 
@@ -260,22 +260,22 @@ public:
   friend void asio_handler_invoke(const Function& function,
       handshake_coro<Handler>* this_handler)
   {
-    using boost::asio::asio_handler_invoke;
+    using asio::asio_handler_invoke;
     asio_handler_invoke(function, &this_handler->handler_);
   }
 
 private:
   Handler handler_;
-  boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket_;
+  asio::ssl::stream<asio::ip::tcp::socket>& socket_;
   std::string host_;
 };
 
 template <typename Handler>
 void async_handshake(
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket,
+    asio::ssl::stream<asio::ip::tcp::socket>& socket,
     const std::string& host, Handler handler)
 {
-  handshake_coro<Handler>(handler, socket, host)(boost::system::error_code());
+  handshake_coro<Handler>(handler, socket, host)(asio::error_code());
 }
 #endif // !defined(URDL_DISABLE_SSL)
 

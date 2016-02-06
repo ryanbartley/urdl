@@ -12,7 +12,7 @@
 #define URDL_HTTP_HPP
 
 #include <string>
-#include <boost/system/error_code.hpp>
+#include "asio/error_code.hpp"
 #include "urdl/detail/config.hpp"
 
 #include "urdl/detail/abi_prefix.hpp"
@@ -22,13 +22,13 @@ namespace http {
 
 /// Gets the error category for HTTP errors.
 /**
- * @returns The @c boost::system::error_category used for HTTP errors.
+ * @returns The @c asio::error_category used for HTTP errors.
  *
  * @par Requirements
  * @e Header: @c <urdl/http.hpp> @n
  * @e Namespace: @c urdl::http
  */
-URDL_DECL const boost::system::error_category& error_category();
+URDL_DECL const asio::error_category& error_category();
 
 /// Option to specify the HTTP request method.
 /**
@@ -417,7 +417,7 @@ namespace errc {
 /// HTTP error codes.
 /**
  * The enumerators of type @c errc_t are implicitly convertible to objects of
- * type @c boost::system::error_code.
+ * type @c asio::error_code.
  *
  * @par Requirements
  * @e Header: @c <urdl/http.hpp> @n
@@ -557,15 +557,15 @@ enum errc_t
 };
 
 /// Converts a value of type @c errc_t to a corresponding object of type
-/// @c boost::system::error_code.
+/// @c asio::error_code.
 /**
  * @par Requirements
  * @e Header: @c <urdl/http.hpp> @n
  * @e Namespace: @c urdl::http
  */
-inline boost::system::error_code make_error_code(errc_t e)
+inline asio::error_code make_error_code(errc_t e)
 {
-  return boost::system::error_code(
+  return asio::error_code(
       static_cast<int>(e), http::error_category());
 }
 
@@ -573,22 +573,18 @@ inline boost::system::error_code make_error_code(errc_t e)
 } // namespace http
 } // namespace urdl
 
-namespace boost {
-namespace system {
+namespace std {
 
 template <>
 struct is_error_code_enum<urdl::http::errc::errc_t>
 {
   static const bool value = true;
 };
-
-} // namespace system
-} // namespace boost
+	
+} // namespace std
 
 #include "urdl/detail/abi_suffix.hpp"
 
-#if defined(URDL_HEADER_ONLY)
 # include "urdl/impl/http.ipp"
-#endif
 
 #endif // URDL_HTTP_HPP

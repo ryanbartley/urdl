@@ -12,7 +12,7 @@
 #define URDL_URL_HPP
 
 #include <string>
-#include <boost/system/error_code.hpp>
+#include "asio/error_code.hpp"
 #include "urdl/detail/config.hpp"
 
 #include "urdl/detail/abi_prefix.hpp"
@@ -67,7 +67,7 @@ public:
   /**
    * @param s URL string to be parsed into its components.
    *
-   * @throws boost::system::system_error Thrown when the URL string is invalid.
+   * @throws std::system_error Thrown when the URL string is invalid.
    */
   url(const char* s)
     : ipv6_host_(false)
@@ -79,7 +79,7 @@ public:
   /**
    * @param s URL string to be parsed into its components.
    *
-   * @throws boost::system::system_error Thrown when the URL string is invalid.
+   * @throws std::system_error Thrown when the URL string is invalid.
    */
   url(const std::string& s)
     : ipv6_host_(false)
@@ -200,7 +200,7 @@ public:
    *
    * @returns A @c url object corresponding to the specified string.
    *
-   * @throws boost::system::system_error Thrown when the URL string is invalid.
+   * @throws std::system_error Thrown when the URL string is invalid.
    */
   URDL_DECL static url from_string(const char* s);
 
@@ -213,7 +213,7 @@ public:
    * @returns A @c url object corresponding to the specified string.
    */
   URDL_DECL static url from_string(const char* s,
-      boost::system::error_code& ec);
+      asio::error_code& ec);
 
   /// Converts a string representation of a URL into an object of class @c url.
   /**
@@ -221,7 +221,7 @@ public:
    *
    * @returns A @c url object corresponding to the specified string.
    *
-   * @throws boost::system::system_error Thrown when the URL string is invalid.
+   * @throws asio::system_error Thrown when the URL string is invalid.
    */
   URDL_DECL static url from_string(const std::string& s);
 
@@ -234,7 +234,7 @@ public:
    * @returns A @c url object corresponding to the specified string.
    */
   URDL_DECL static url from_string(const std::string& s,
-      boost::system::error_code& ec);
+      asio::error_code& ec);
 
   /// Compares two @c url objects for equality.
   friend URDL_DECL bool operator==(const url& a, const url& b);
@@ -262,8 +262,6 @@ private:
 
 #include "urdl/detail/abi_suffix.hpp"
 
-#if defined(URDL_HEADER_ONLY)
 # include "urdl/impl/url.ipp"
-#endif
 
 #endif // URDL_URL_HPP
