@@ -39,6 +39,50 @@ std::string url::path() const
   unescape_path(path_, tmp_path);
   return tmp_path;
 }
+	
+void url::set_protocol( std::string protocol )
+{
+  protocol_.resize( protocol.length() );
+  for (std::size_t i = 0; i < protocol.length(); ++i)
+	protocol_[i] = std::tolower(protocol[i]);
+}
+	
+url& url::append_path( std::string path )
+{
+	if(path_.empty() || path_ == "/") {
+		if(path.front() != '/')
+			set_path("/" + path);
+		else
+			set_path(path);
+	}
+	else if(path_.back() == '/' && path.front() == '/') {
+		path_.pop_back();
+		set_path(path_ + path);
+	}
+	else if(path_.back() != '/' && path.front() != '/')
+		set_path(path_ + "/" + path);
+	else {
+		// Only one slash.
+		set_path(path_ + path);
+	}
+	return *this;
+}
+	
+url& url::add_query( std::string query )
+{
+	if( ! query_.empty() )
+		query_.append( "&" );
+	query_.append( query );
+	return *this;
+}
+	
+url& url::add_query( std::string key, std::string value )
+{
+	if( ! query_.empty() )
+		query_.append( "&" );
+	query_.append( key + "=" + value );
+	return *this;
+}
 
 std::string url::to_string(int components) const
 {
@@ -71,9 +115,9 @@ std::string url::to_string(int components) const
     s += port_;
   }
 
-  if ((components & path_component) != 0 && !path_.empty())
+  if ((components & path_component) != 0 )
   {
-    s += path_;
+	s += !path_.empty() ? path_ : "/";
   }
 
   if ((components & query_component) != 0 && !query_.empty())

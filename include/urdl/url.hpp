@@ -96,6 +96,14 @@ public:
   {
     return protocol_;
   }
+	
+  URDL_DECL void set_protocol( std::string protocol );
+	
+  url& protocol( std::string protocol )
+  {
+	set_protocol( std::move( protocol ) );
+	return *this;
+  }
 
   /// Gets the user info component of the URL.
   /**
@@ -106,6 +114,17 @@ public:
   {
     return user_info_;
   }
+	
+  void set_user_info( std::string user_info )
+  {
+	user_info_ = std::move( user_info );
+  }
+	
+  url& user_info( std::string user_info )
+  {
+	set_user_info( std::move( user_info ) );
+	return *this;
+  }
 
   /// Gets the host component of the URL.
   /**
@@ -114,6 +133,17 @@ public:
   std::string host() const
   {
     return host_;
+  }
+	
+  void set_host( std::string host )
+  {
+	host_ = std::move( host );
+  }
+	
+  url& host( std::string host )
+  {
+	set_host( std::move( host ) );
+	return *this;
   }
 
   /// Gets the port component of the URL.
@@ -125,6 +155,28 @@ public:
    * http, @c https or @c ftp, an appropriate default port number is returned.
    */
   URDL_DECL unsigned short port() const;
+	
+  void set_port( std::string port )
+  {
+	port_ = std::move( port );
+  }
+	
+  void set_port( uint16_t port )
+  {
+	port_ = std::to_string( port );
+  }
+	
+  url& port( std::string port )
+  {
+	set_port( std::move( port ) );
+	return *this;
+  }
+	
+  url& port( uint16_t port )
+  {
+	set_port( port );
+	return *this;
+  }
 
   /// Gets the path component of the URL.
   /**
@@ -135,6 +187,20 @@ public:
    * @c to_string(url::path_component).
    */
   URDL_DECL std::string path() const;
+	
+  void set_path( std::string path )
+  {
+	path_ = std::move( path );
+  }
+	
+  url& path( std::string path )
+  {
+	set_path( std::move( path ) );
+	return *this;
+  }
+	
+  // TODO: Need to implement
+  URDL_DECL url& append_path( std::string path );
 
   /// Gets the query component of the URL.
   /**
@@ -148,6 +214,11 @@ public:
   {
     return query_;
   }
+	
+  // TODO: Need to implement
+  URDL_DECL url& add_query( std::string query );
+  // TODO: Need to implement
+  URDL_DECL url& add_query( std::string key, std::string value );
 
   /// Gets the fragment component of the URL.
   /**
@@ -156,6 +227,17 @@ public:
   std::string fragment() const
   {
     return fragment_;
+  }
+	
+  void set_fragment( std::string fragment )
+  {
+	fragment_ = std::move( fragment );
+  }
+	
+  url& fragment( std::string fragment )
+  {
+	set_fragment( std::move( fragment ) );
+	return *this;
   }
 
   /// Components of the URL, used with @c from_string.
